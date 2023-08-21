@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "excel4node": "^1.8.2",
+    "puppeteer": "^21.1.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}
