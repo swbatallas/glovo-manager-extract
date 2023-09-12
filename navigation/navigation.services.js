@@ -4,14 +4,13 @@ const delay = require('./../helpers/delay');
 
 require('dotenv').config();
 
-const url = 'https://managers.glovoapp.com/operations';
 const email = process.env.EMAIL;
 const password = process.env.PASSWORD;
 
 module.exports = { start, end, toDate, toStore, closeStore };
 
-async function start() {
-  const browser = await puppeteer.launch();
+async function start(url) {
+  const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
   await page.goto(url);
 
@@ -24,20 +23,16 @@ async function start() {
   await page.waitForSelector('.content');
   await page.setViewport({ width: 1920, height: 1080 });
 
-  //seleccionar tienda y deseleccionar Casa de las carcasas
-  await page.click('.multi-store');
-  await page.click(
-    '.par-checkbox-group-all__select-all.par-checkbox-group-all__select-all'
-  );
-  await page.click('.par-checkbox-group__element:nth-last-child(1)');
-  await page.click(
-    '.par-icon.par-icon--medium.par-dsv__icon.par-dsv__icon--up'
-  );
-
   return { browser, page };
 }
 
 async function toDate(page, fecha) {
+  //seleccionar todas las tiendas
+  await page.click('.multi-store');
+  await page.click(
+    '.par-checkbox-group-all__select-all.par-checkbox-group-all__select-all:nth-child(1)'
+  );
+
   //Selecciona seccion fecha personalizada
   await page.waitForSelector(
     '.par-icon.par-icon--medium.time-period-trigger-icon'
@@ -46,8 +41,16 @@ async function toDate(page, fecha) {
   await delay.time(1000);
   await page.click('.par-chip:nth-child(2)');
 
+  //Encuentra cual es el mes que aparece en pantalla
+  await page.waitForSelector('.vc-title');
+  const monthDiv = await page.$('.vc-title');
+  const glovoDate = await page.evaluate(
+    (element) => element.textContent,
+    monthDiv
+  );
+
   //calcula la diferencia entre el mes actual y el indicado y cambia al indicado
-  const result = await difference.betweenMonths(fecha);
+  const result = await difference.betweenMonths(glovoDate, fecha);
   if (result != 0) {
     await page.waitForSelector('.vc-arrow.is-left');
     for (let i = 0; i < result; i++) {
